@@ -160,3 +160,21 @@ def test_the_int8_graph_reaches_the_same_decisions(exported):
     for head in ("decision", "sentinel"):
         assert (int8_logits[head].argmax(-1) == torch_logits[head].argmax(-1)).all(), \
             f"int8 changed a {head} decision"
+
+
+def test_the_export_carries_the_contrastive_embedding(exported):
+    """The case banks compare requests in the space supervised-contrastive training shaped,
+    so the 128-d normalised projection of the story-blind pass must come out of the graph."""
+    import onnxruntime as ort
+
+    from training import export_v2
+
+    session = ort.InferenceSession(str(exported / "model.onnx"), providers=["CPUExecutionProvider"])
+    names = [o.name for o in session.get_outputs()]
+    assert "embedding" in names
+    ids = _ids_for(exported, SAMPLES[0])
+    emb = session.run(None, {"input_ids": ids, "attention_mask": np.ones_like(ids)})[names.index("embedding")]
+    assert emb.shape == (1, 128)
+    assert abs(float(np.linalg.norm(emb)) - 1.0) < 1e-4
+    want = export_v2.torch_embeddings(CHECKPOINT.parent, SAMPLES[:1], max_len=MAX_LEN)
+    assert float(np.abs(emb - want).max()) < 1e-3

@@ -49,12 +49,13 @@ class _Out:
 class FakeSession:
     """Returns the logits the test registered for each exact input length."""
 
-    def __init__(self, by_length: dict[int, dict]):
+    def __init__(self, by_length: dict[int, dict], embedding: bool = False):
         self.by_length = by_length
+        self.embedding = embedding
         self.seen: list[int] = []
 
     def get_outputs(self):
-        return [_Out(h) for h in HEADS]
+        return [_Out(h) for h in HEADS] + ([_Out("embedding")] if self.embedding else [])
 
     def run(self, _, feeds):
         n = feeds["input_ids"].shape[1]
@@ -62,7 +63,12 @@ class FakeSession:
         if n not in self.by_length:
             raise AssertionError(f"the model encoded something unexpected: length {n} "
                                  f"is neither of {sorted(self.by_length)}")
-        return [np.array([self.by_length[n][h]], dtype=np.float32) for h in HEADS]
+        out = [np.array([self.by_length[n][h]], dtype=np.float32) for h in HEADS]
+        if self.embedding:
+            v = np.zeros((1, 4), dtype=np.float32)
+            v[0, n % 4] = 1.0  # a different unit vector per input length
+            out.append(v)
+        return out
 
 
 def logits(decision: str, sentinel: str) -> dict:
@@ -167,3 +173,22 @@ def test_loading_a_missing_model_says_so(tmp_path):
 
     with pytest.raises(GuardUnavailable, match="no v0.7 model"):
         HarrierModel(tmp_path / "nothing")
+
+
+def test_the_embedding_comes_from_the_story_blind_pass():
+    """Case banks compare requests with their story cut, so a story cannot move a request
+    towards the legitimate-use precedents."""
+    from aegisframe.local.harrier import build_ids
+
+    tok = CountingTokenizer()
+    n_plain = len(build_ids(tok, CONTEXT, PLAIN, 128, 2, 1))
+    n_raw = len(build_ids(tok, CONTEXT, RAW, 128, 2, 1))
+    session = FakeSession({n_raw: logits("ALLOW", "ALLOW"), n_plain: logits("ALLOW", "ALLOW")}, embedding=True)
+    got = HarrierModel.from_parts(session, tok, CONFIG).analyze(CONTEXT, RAW, PLAIN)
+    assert got.embedding is not None
+    assert int(np.argmax(got.embedding)) == n_plain % 4
+
+
+def test_a_graph_without_an_embedding_still_works():
+    model, _ = build(long=logits("ALLOW", "ALLOW"), short=logits("ALLOW", "ALLOW"))
+    assert model.analyze(CONTEXT, RAW, PLAIN).embedding is None

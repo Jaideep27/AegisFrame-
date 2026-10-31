@@ -7,6 +7,8 @@ __pycache__/
 # data: only the v0.7 datasets are tracked
 data/*
 !data/aegis_v2/
+# test-only probe sets: never training data
+!data/probes/
 data/aegis_v2/*
 !data/aegis_v2/claude_en/
 !data/aegis_v2/claude_v1_mixed/

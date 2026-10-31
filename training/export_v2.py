@@ -39,6 +39,7 @@ class ExportWrapper(nn.Module):
         self.encoder = model.encoder
         self.full_heads = model.full_heads
         self.plain_heads = model.plain_heads
+        self.proj = model.proj
 
     def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> tuple[torch.Tensor, ...]:
         hidden = self.encoder(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state
@@ -46,7 +47,8 @@ class ExportWrapper(nn.Module):
         pooled = hidden[torch.arange(hidden.shape[0], device=hidden.device), last]
         out = {k: head(pooled) for k, head in self.full_heads.items()}
         out.update({k: head(pooled) for k, head in self.plain_heads.items()})
-        return tuple(out[h] for h in HEADS)
+        embedding = nn.functional.normalize(self.proj(pooled), dim=-1)
+        return (*(out[h] for h in HEADS), embedding)
 
 
 def load_model(model_dir: str | Path, train_layers: int = 6) -> tuple[T.PilotModel, object]:
@@ -78,6 +80,19 @@ def torch_logits(model_dir: str | Path, samples: list[tuple[str, str]], max_len:
     return {h: np.stack(v) for h, v in rows.items()}
 
 
+def torch_embeddings(model_dir: str | Path, samples: list[tuple[str, str]], max_len: int) -> np.ndarray:
+    """The training-time contrastive embedding: normalize(proj(pooled)), as supcon saw it."""
+    model, tok = load_model(model_dir)
+    wrapped = HFTokenizer(tok)
+    rows = []
+    with torch.no_grad():
+        for context, message in samples:
+            ids = build_ids(wrapped, context, message, max_len, tok.bos_token_id, tok.eos_token_id)
+            pooled = model.pool([model.bottom(ids)])
+            rows.append(nn.functional.normalize(model.proj(pooled), dim=-1)[0].cpu().numpy())
+    return np.stack(rows)
+
+
 def session_logits(session, model_dir: str | Path, samples: list[tuple[str, str]],
                    max_len: int) -> dict[str, np.ndarray]:
     """What the shipped runtime will compute: the exported graph plus the exported tokenizer.json."""
@@ -106,9 +121,9 @@ def export(model_dir: str | Path, out: str | Path, max_len: int = 128, quantize:
     mask = torch.ones_like(ids)
     torch.onnx.export(
         wrapper, (ids, mask), str(out / "model.onnx"),
-        input_names=["input_ids", "attention_mask"], output_names=list(HEADS),
+        input_names=["input_ids", "attention_mask"], output_names=[*HEADS, "embedding"],
         dynamic_axes={"input_ids": {0: "batch", 1: "seq"}, "attention_mask": {0: "batch", 1: "seq"},
-                      **{h: {0: "batch"} for h in HEADS}},
+                      **{h: {0: "batch"} for h in (*HEADS, "embedding")}},
         opset_version=18, dynamo=False,
     )
     if quantize:
@@ -124,6 +139,7 @@ def export(model_dir: str | Path, out: str | Path, max_len: int = 128, quantize:
         "task": TASK,
         "max_len": max_len,
         "heads": list(HEADS),
+        "embedding_dim": int(model.proj.out_features),
         "labels": {h: list(vocab[h]) for h in HEADS},
         "bos_token_id": tok.bos_token_id,
         "eos_token_id": tok.eos_token_id,

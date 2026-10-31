@@ -122,6 +122,8 @@ class HarrierAnalysis:
     purpose: dict[str, float]
     distinguishable: dict[str, float]
     fact_class: dict[str, float]
+    #: the 128-d contrastive embedding of the story-blind pass, unit length; None for a graph without one
+    embedding: np.ndarray | None = None
 
     @property
     def p_block(self) -> float:
@@ -186,18 +188,19 @@ class HarrierModel:
     def available(path: str | Path | None = None) -> bool:
         return (resolve_path(path) / "config.json").exists()
 
-    def _pass(self, context: str, message: str) -> dict[str, dict[str, float]]:
+    def _pass(self, context: str, message: str) -> tuple[dict[str, dict[str, float]], np.ndarray | None]:
         ids = np.array([build_ids(self.tokenizer, context, message, self.max_len, self.bos, self.eos)],
                        dtype=np.int64)
         raw = dict(zip(self.outputs, self.session.run(None, {"input_ids": ids,
                                                              "attention_mask": np.ones_like(ids)})))
-        return {h: dict(zip(self.labels[h], _softmax(raw[h][0]).tolist())) for h in HEADS}
+        heads = {h: dict(zip(self.labels[h], _softmax(raw[h][0]).tolist())) for h in HEADS}
+        return heads, (raw["embedding"][0] if "embedding" in raw else None)
 
     def analyze(self, context: str, prompt: str, plain: str | None = None) -> HarrierAnalysis:
         """Both passes. `plain` is the message with its story cut; without one, the raw message is used
         for both, which is weaker but never unsafe - the sentinel can still only raise the decision."""
-        full = self._pass(context, prompt)
-        story_blind = self._pass(context, plain if plain is not None else prompt)
+        full, _ = self._pass(context, prompt)
+        story_blind, embedding = self._pass(context, plain if plain is not None else prompt)
         decision = story_blind["decision"]
         sentinel = full["sentinel"]
         return HarrierAnalysis(
@@ -208,6 +211,7 @@ class HarrierModel:
             purpose=full["purpose"],
             distinguishable=full["distinguishable"],
             fact_class=story_blind["fact_class"],
+            embedding=embedding,
         )
 
 
