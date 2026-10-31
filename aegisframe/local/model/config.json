@@ -1,0 +1,144 @@
+{
+  "format": 1,
+  "encoder": "sentence-transformers/all-MiniLM-L6-v2",
+  "labels": {
+    "tags": [
+      "O",
+      "B-FIELD",
+      "I-FIELD",
+      "B-OLD",
+      "I-OLD",
+      "B-NEW",
+      "I-NEW",
+      "B-MARK",
+      "I-MARK",
+      "B-OBJ",
+      "I-OBJ",
+      "B-STORY",
+      "I-STORY"
+    ],
+    "intent": [
+      "forge_replace",
+      "forge_remove",
+      "forge_signature",
+      "forge_marking_removal",
+      "marked_sample",
+      "fictional",
+      "cosmetic",
+      "redaction",
+      "annotate",
+      "question",
+      "unclear",
+      "photo_visual",
+      "person_neutral",
+      "person_demeaning",
+      "person_false_act",
+      "person_satire"
+    ],
+    "decision": [
+      "ALLOW",
+      "REVIEW",
+      "BLOCK"
+    ],
+    "field_class": [
+      "none",
+      "money",
+      "identity",
+      "result",
+      "score",
+      "date",
+      "signature",
+      "marking",
+      "other"
+    ],
+    "pattern": [
+      "none",
+      "amount-inflation",
+      "amount-deflation",
+      "result-flip",
+      "score-inflation",
+      "validity-extension",
+      "identity-swap",
+      "signature-forgery",
+      "date-shift",
+      "marking-removal",
+      "person-fabrication"
+    ],
+    "twist": [
+      "purpose",
+      "dispute",
+      "legal",
+      "authority",
+      "urgency",
+      "emotional",
+      "hypothetical",
+      "roleplay",
+      "correction_claim",
+      "ownership_claim",
+      "indirect",
+      "obfuscated",
+      "hinglish",
+      "multi_turn"
+    ],
+    "misuse": [
+      "none",
+      "deceive_lender",
+      "deceive_employer",
+      "deceive_merchant",
+      "deceive_institution",
+      "deceive_authority",
+      "deceive_insurer",
+      "deceive_public"
+    ],
+    "benign_need": [
+      "none",
+      "personal_edit",
+      "information",
+      "sample",
+      "privacy",
+      "creative"
+    ]
+  },
+  "pooled_heads": [
+    "intent",
+    "twist",
+    "purpose",
+    "decision",
+    "field_class",
+    "pattern",
+    "misuse",
+    "benign_need"
+  ],
+  "max_full": 112,
+  "max_plain": 96,
+  "metrics": {
+    "val": {
+      "acc_intent": 0.9995,
+      "acc_decision": 1.0,
+      "acc_field_class": 1.0,
+      "acc_pattern": 0.99,
+      "acc_misuse": 1.0,
+      "acc_benign_need": 1.0,
+      "acc_purpose": 0.999,
+      "acc_tags": 0.9991968615821827,
+      "harmful_allow_rate": 0.0,
+      "benign_block_rate": 0.0
+    },
+    "test_heldout": {
+      "acc_intent": 0.9336666666666666,
+      "acc_decision": 0.962,
+      "acc_field_class": 0.9536666666666667,
+      "acc_pattern": 0.938,
+      "acc_misuse": 0.7753333333333333,
+      "acc_benign_need": 1.0,
+      "acc_purpose": 0.9363333333333334,
+      "acc_tags": 0.8575849383250379,
+      "harmful_allow_rate": 0.0,
+      "benign_block_rate": 0.0
+    },
+    "train_minutes": 67.87124853928884,
+    "encoder": "sentence-transformers/all-MiniLM-L6-v2",
+    "train_examples": 24000
+  },
+  "version": "aegis-local-v3"
+}

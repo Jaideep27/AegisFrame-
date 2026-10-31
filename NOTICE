@@ -1,0 +1,5 @@
+AegisFrame
+Copyright 2026 Jaideep Chandrasekharuni
+
+The bundled local model (aegisframe/local/model) is fine-tuned from
+sentence-transformers/all-MiniLM-L6-v2, licensed under the Apache License 2.0.

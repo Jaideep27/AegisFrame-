@@ -1,0 +1,55 @@
+# Known fraud patterns, written over field classes (money, identity, result, score, date,
+# signature), not over industries. A pattern matches a single resolved change.
+#   direction: up | down        compare old vs new value (numbers or dates)
+#   flip_pairs                   the change swaps one word of a pair for the other
+#   label_any                    the field label must contain one of these words
+patterns:
+  - id: amount-inflation
+    field_class: [money]
+    direction: up
+    p: 0.92
+    note: a larger amount on a payment proof, payslip, statement, bill or claim
+  - id: amount-deflation
+    field_class: [money]
+    direction: down
+    p: 0.80
+    note: a smaller amount, e.g. to under-declare or to dispute a charge
+  - id: result-flip
+    field_class: [result]
+    flip_pairs:
+      - [positive, negative]
+      - [reactive, non-reactive]
+      - [pass, fail]
+      - [passed, failed]
+      - [approved, rejected]
+      - [approved, declined]
+      - [success, failed]
+      - [completed, pending]
+      - [completed, failed]
+      - [paid, unpaid]
+      - [eligible, ineligible]
+    p: 0.95
+    note: an outcome or status reversed
+  - id: score-inflation
+    field_class: [score]
+    direction: up
+    p: 0.90
+    note: higher marks, percentage or grade
+  - id: validity-extension
+    field_class: [date]
+    label_any: [valid, validity, expiry, expires, until, due, warranty, end, period]
+    direction: up
+    p: 0.85
+    note: an expiry, due or validity date moved later
+  - id: identity-swap
+    field_class: [identity]
+    p: 0.90
+    note: a different name, ID or account number on someone else's record
+  - id: signature-forgery
+    field_class: [signature]
+    p: 0.97
+    note: a signature or seal added or changed
+  - id: date-shift
+    field_class: [date]
+    p: 0.45
+    note: any other date moved on a record

@@ -1,0 +1,40 @@
+# A company policy built on the default. Rules are topic-free: they talk about records,
+# facts and whether the output passes as genuine, never about industries.
+version: 1
+
+rules:
+  - id: forged-evidence
+    when: {is_evidence: true, real_source: true, factual_change: true, passes_as_genuine: true}
+    action_by_severity: {critical: block, high: block, moderate: review, low: review}
+
+  - id: unparsed-record-edit
+    when: {is_evidence: true, real_source: true, edit_understood: false}
+    action: review
+    escalate_on_reframing: false
+
+  - id: real-person-fabrication
+    when: {real_person_false_act: true, passes_as_genuine: true}
+    action: block
+
+# Company-specific tightening (overrides can never loosen a decision)
+overrides:
+  - match: {doc_type_contains: "boarding pass"}
+    action: block
+
+# Roles verified by your SSO / API scopes that may unlock a rule up to a severity ceiling
+verified_roles:
+  - role: claims_adjuster
+    rule: forged-evidence
+    max_severity: moderate
+    action: review
+  - role: hr_verification_officer
+    rule: forged-evidence
+    max_severity: high
+    action: review
+
+claims:
+  reframing_escalates_review_to_block: true
+
+judges:
+  refuse_threshold: 0.5
+  review_threshold: 0.3

@@ -1,0 +1,62 @@
+# AegisFrame configuration: every attribute, with its default.
+# Load with Guard.from_config("aegis.yaml"). Any value can be overridden by an environment
+# variable AEGIS__SECTION__KEY, e.g. AEGIS__COUNCIL__ENABLED=false.
+
+policy_file: policy.example.yaml   # null = the built-in topic-free policy
+
+providers:                          # named model endpoints; keys come from env vars, never from this file
+  # gemini: {kind: gemini, model: gemini-2.5-flash, api_key_env: GEMINI_API_KEY, retries: 2}
+  # local:  {kind: openai_compat, base_url: http://localhost:11434/v1, model: qwen2.5vl}
+  # openai: {kind: openai_compat, model: gpt-4.1-mini, api_key_env: OPENAI_API_KEY}
+
+separator:
+  mode: rules                       # rules | llm | agreement (LLM separators + rules; disagreement -> stricter)
+  providers: []                     # e.g. [gemini, local]
+
+grounding:
+  ocr: rapid                        # rapid (local CPU OCR) | none (records are not recognised: testing only)
+
+council:                            # probabilistic agent council (see docs/council.md)
+  enabled: true
+  prior: 0.10
+  agents:
+    - {name: severity, weight: 1.0}
+    - {name: fraud_patterns, weight: 1.2}
+    - {name: history, weight: 1.0}
+    # - {name: plain_request, weight: 1.5, provider: gemini}
+    # - {name: red_team, weight: 1.0, provider: local}
+    # - {name: advocate, weight: 0.8, provider: gemini}
+  scheduling: sequential            # sequential (stop once the decision cannot change) | all
+  debate: {rounds: 1, spread: 0.30, openness: 0.3}
+  thresholds: {block: 0.85, review: 0.50}
+  veto: 0.80                        # one agent at/above this on a CRITICAL change blocks
+  purpose: {enabled: true, weight: 1.0, provider: null}   # the only agent that reads the story; one-sided
+  calibration_file: null            # output of `aegisframe calibrate` overrides thresholds
+
+decision:
+  fail_mode: closed                 # closed | open  (closed: any guard error blocks)
+  claim_blind: true                 # research ablation only: false lets LLM agents read the story
+
+review:
+  on_review: raise                  # raise (ReviewRequired) | block | allow (testing only)
+  queue_path: null                  # e.g. reviews.db to queue REVIEW decisions for humans
+  secret_env: AEGIS_REVIEW_SECRET   # HMAC secret for approval tokens
+  webhook_url: null                 # POSTed for every queued review (Slack/Teams/ticketing bridge)
+
+memory:
+  backend: memory                   # memory | sqlite (retry/multi-turn tracking across processes)
+  path: null
+
+audit:
+  sink: memory                      # memory | jsonl | sqlite
+  path: null
+
+privacy:
+  store_claims: hash                # hash | text | none  (the user's stated reasons in audit/review records)
+
+verify:
+  enabled: true                     # check every generated image against the original upload
+
+server:
+  upstream: https://api.openai.com/v1
+  trust_identity_header: false      # true ONLY behind your own auth gateway

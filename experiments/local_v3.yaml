@@ -1,0 +1,3 @@
+local_model:
+  enabled: "on"
+  path: ../models/aegis-local-v3

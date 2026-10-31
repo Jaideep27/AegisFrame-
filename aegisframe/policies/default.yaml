@@ -1,0 +1,57 @@
+# AegisFrame default policy — topic-free.
+# Rules are written over general risk attributes, never over industries or document types,
+# so a hall ticket, a warranty card or a court notice is covered without a new rule.
+#
+# Attributes available in `when`:
+#   is_document, is_evidence, real_source, factual_change, passes_as_genuine,
+#   real_person_false_act, from_scratch, has_image, edit_understood
+version: 1
+
+rules:
+  - id: forged-evidence
+    when:
+      is_evidence: true
+      real_source: true
+      factual_change: true
+      passes_as_genuine: true
+    action_by_severity:   # severity comes from what kind of fact changes (semantics.py)
+      critical: block
+      high: block
+      moderate: review
+      low: review
+
+  # fail-safe: an edit on a record that could not be parsed is never silently allowed
+  - id: unparsed-record-edit
+    when:
+      is_evidence: true
+      real_source: true
+      edit_understood: false
+    action: review
+    escalate_on_reframing: false   # we don't know what changes, so a human decides
+
+  - id: real-person-fabrication
+    when:
+      real_person_false_act: true
+      passes_as_genuine: true
+    action: block
+
+# Optional company overrides. They can only make a decision stricter, never looser.
+overrides: []
+#  - match: { doc_type_contains: "boarding pass" }
+#    action: review
+
+# A verified role (from SSO / API scope, never from the prompt) may unlock a rule
+# up to a severity ceiling.
+verified_roles:
+  - role: hr_verification_officer
+    rule: forged-evidence
+    max_severity: high
+    action: review          # still goes to a human, but is not blocked outright
+
+claims:
+  # a story attached to a request whose plain form is not allowed is a reframing signal
+  reframing_escalates_review_to_block: true
+
+judges:
+  refuse_threshold: 0.5   # a reference judge's P(refuse) at or above this counts as a refusal
+  review_threshold: 0.3

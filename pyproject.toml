@@ -1,0 +1,69 @@
+[project]
+name = "aegisframe"
+version = "0.6.0"
+description = "Guardrail for AI image editing: a good story should not unlock a forgery."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Jaideep Chandrasekharuni" }]
+keywords = ["ai-safety", "guardrails", "image-editing", "llm", "fraud", "document-forgery", "jailbreak"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+dependencies = [
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "pillow>=10.3",
+    "numpy>=1.26",
+    "httpx>=0.27",
+    "rapidocr>=3.0",
+    "onnxruntime>=1.20",
+    "tokenizers>=0.19",
+]
+
+[project.optional-dependencies]
+ocr = []  # OCR is now a core dependency; kept so `aegisframe[ocr]` still installs
+server = ["fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9"]
+openai = ["openai>=1.40"]
+gemini = ["google-genai>=1.0"]
+all = ["aegisframe[server,openai,gemini]"]
+
+[project.scripts]
+aegisframe = "aegisframe.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8.0", "fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9"]
+train = [
+    "onnx>=1.23.2",
+    "protobuf>=7.36.2",
+    "scikit-learn>=1.9.1",
+    "sentence-transformers>=6.1",
+    "sentencepiece>=0.2.2",
+    "tokenizers>=0.23.3",
+    "torch>=2.14.1",
+    "torchvision>=0.29.2",
+    "transformers>=5.20.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["aegisframe", "reframebench"]
+
+[tool.hatch.build.targets.sdist]
+include = ["aegisframe", "reframebench", "tests", "docs", "examples", "README.md", "CHANGELOG.md", "LICENSE", "NOTICE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["ocr: needs the optional OCR engine (rapidocr)", "uses_local_model: runs the trained local model"]

@@ -1,0 +1,20 @@
+*.pyc
+.env
+.pytest_cache/
+.superpowers/
+.venv/
+__pycache__/
+# data: only the v0.7 datasets are tracked
+data/*
+!data/aegis_v2/
+data/aegis_v2/*
+!data/aegis_v2/claude_en/
+!data/aegis_v2/claude_v1_mixed/
+models/
+models_train_*.log
+results/
+results_*.log
+dist/
+aegis-mac.zip
+*.log
+models_train_*.log
