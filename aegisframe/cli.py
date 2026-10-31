@@ -201,6 +201,20 @@ def cmd_serve(args) -> int:
     return 0
 
 
+def cmd_mcp(args) -> int:
+    try:
+        import mcp  # noqa: F401
+    except ImportError:
+        print("the MCP server needs the mcp extra: pip install 'aegisframe[mcp]'")
+        return 1
+    from .harrier_guard import HarrierGuard
+    from .mcp_server import build_server
+
+    guard = HarrierGuard.load(args.model)
+    build_server(guard).run(transport="streamable-http" if args.http else "stdio")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     from . import __version__
 
@@ -270,6 +284,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--port", type=int, default=8080)
     common(p)
     p.set_defaults(fn=cmd_serve)
+
+    p = sub.add_parser("mcp", help="run the v0.7 guard as an MCP server (stdio or HTTP)")
+    p.add_argument("--model", default=None, help="path to the exported v0.7 model directory")
+    p.add_argument("--http", action="store_true", help="serve over streamable HTTP instead of stdio")
+    p.set_defaults(fn=cmd_mcp)
 
     p = sub.add_parser("bench", help="run ReframeBench (options are passed through)", add_help=False)
     p.set_defaults(fn=None)
