@@ -35,13 +35,14 @@ ocr = []  # OCR is now a core dependency; kept so `aegisframe[ocr]` still instal
 server = ["fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9"]
 openai = ["openai>=1.40"]
 gemini = ["google-genai>=1.0"]
-all = ["aegisframe[server,openai,gemini]"]
+mcp = ["mcp>=1.2"]
+all = ["aegisframe[server,openai,gemini,mcp]"]
 
 [project.scripts]
 aegisframe = "aegisframe.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8.0", "fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9"]
+dev = ["pytest>=8.0", "fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9", "mcp>=1.2"]
 train = [
     "onnx>=1.23.2",
     "protobuf>=7.36.2",
