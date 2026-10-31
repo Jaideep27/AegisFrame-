@@ -26,31 +26,28 @@ import torch
 from torch import nn
 from transformers import AutoModel, AutoTokenizer
 
+from aegisframe.local.harrier import HFTokenizer, build_ids, final_decision
 from aegisframe.local.labels import DECISION, DISTINGUISHABLE, FACT_CLASS, INTENT, PURPOSE
 from reframebench.datagen_v2.validate import plain_text
 
 ENCODER = "microsoft/harrier-oss-v1-270m"
-TASK = "Decide whether this image-edit request would produce a falsified record that passes as genuine"
 FULL_HEADS = {"sentinel": DECISION, "intent": INTENT, "purpose": PURPOSE, "distinguishable": DISTINGUISHABLE}
 PLAIN_HEADS = {"decision": DECISION, "fact_class": FACT_CLASS}
-RISK = {d: i for i, d in enumerate(["ALLOW", "REVIEW", "BLOCK"])}
 DEV = torch.device("cpu")  # set from --device in main()
 
 
 # ------------------------------------------------------------------ inputs
 class Encoder:
-    """Builds [bos] instruction + record + turns + message [eos], cutting the record first when too long."""
+    """[bos] instruction + record + turns + message [eos]. The rule itself lives in the shipped package,
+    aegisframe.local.harrier.build_ids, so training and serving cannot encode a request differently."""
 
     def __init__(self, tok, max_len: int):
         self.tok, self.max_len = tok, max_len
-        self.prefix = tok(f"Instruct: {TASK}\nQuery: ", add_special_tokens=False)["input_ids"]
+        self.wrapped = HFTokenizer(tok)
 
     def ids(self, context: str, message: str) -> list[int]:
-        msg = self.tok(message, add_special_tokens=False)["input_ids"]
-        budget = self.max_len - len(self.prefix) - 2
-        msg = msg[-(budget - 16):] if len(msg) > budget - 16 else msg  # keep the end of very long messages
-        ctx = self.tok(context, add_special_tokens=False)["input_ids"][: max(0, budget - len(msg))]
-        return [self.tok.bos_token_id] + self.prefix + ctx + msg + [self.tok.eos_token_id]
+        return build_ids(self.wrapped, context, message, self.max_len,
+                         self.tok.bos_token_id, self.tok.eos_token_id)
 
 
 def texts(r: dict) -> tuple[str, str, str]:
@@ -202,11 +199,6 @@ def cache_bottom(model: "PilotModel", splits: dict[str, list[dict]]) -> None:
 
 
 # ------------------------------------------------------------------ evaluation
-def final_decision(plain: str, sentinel: str) -> str:
-    """Plain (story-blind) decision; the full-pass sentinel may only raise it."""
-    return plain if RISK[plain] >= RISK[sentinel] else sentinel
-
-
 def metrics(gold: list[str], pred: list[str], seed: int = 0) -> dict:
     g, p = np.array(gold), np.array(pred)
     f1s = []

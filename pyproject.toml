@@ -66,4 +66,6 @@ include = ["aegisframe", "reframebench", "tests", "docs", "examples", "README.md
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["ocr: needs the optional OCR engine (rapidocr)", "uses_local_model: runs the trained local model"]
+markers = ["ocr: needs the optional OCR engine (rapidocr)", "uses_local_model: runs the trained local model",
+           "harrier: exports and runs the trained v0.7 model (slow; needs models/aegis-v07-r1)"]
+addopts = "-m 'not harrier'"
