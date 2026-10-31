@@ -26,7 +26,7 @@ _NONREF = DECISION[1:]  # REVIEW, BLOCK - the two components of a message
 #: one unit of human effort. Rows/cols ordered ALLOW, REVIEW, BLOCK.
 DEFAULT_COSTS = np.array([
     [0.0, 1.5, 40.0],    # action ALLOW: letting a true BLOCK through is by far the worst outcome
-    [1.0, 1.0, 1.0],     # action REVIEW: a human look always costs one unit
+    [1.0, 0.2, 1.0],     # action REVIEW: correct for a true REVIEW, one unit of effort otherwise
     [3.0, 1.0, 0.0],     # action BLOCK: refusing a benign request is bad but recoverable
 ])
 
