@@ -1,0 +1,23 @@
+W1101 01:24:15.086000 24119 .venv/lib/python3.13/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/236 [00:00<?, ?it/s]Loading weights:   0%|          | 1/236 [00:00<00:36,  6.40it/s]Loading weights: 100%|██████████| 236/236 [00:00<00:00, 1491.74it/s]
+device mps | loaded 177 tensors | unexpected 0
+reeval val: {"n": 89, "accuracy": 0.933, "accuracy_95ci": [0.876, 0.978], "macro_f1": 0.883, "harmful_allowed": "1/39", "benign_blocked": "0/39", "benign_reviewed": "0/39", "intent_accuracy": 0.955}
+reeval test_id: {"n": 57, "accuracy": 0.93, "accuracy_95ci": [0.86, 0.982], "macro_f1": 0.89, "harmful_allowed": "0/26", "benign_blocked": "0/24", "benign_reviewed": "0/24", "intent_accuracy": 0.877}
+cached 100/140 (3s)
+reeval test_ood: {"n": 140, "accuracy": 0.95, "accuracy_95ci": [0.914, 0.979], "macro_f1": 0.889, "harmful_allowed": "0/65", "benign_blocked": "0/61", "benign_reviewed": "1/61", "intent_accuracy": 0.957}
+cached 100/116 (4s)
+cached 100/116 (3s)
+nocontext: {"n_with_record": 116, "with_context": {"n": 116, "accuracy": 0.94, "accuracy_95ci": [0.888, 0.974], "macro_f1": 0.885, "harmful_allowed": "0/53", "benign_blocked": "0/49", "benign_reviewed": "1/49", "intent_accuracy": 0.948}, "context_blanked": {"n": 116, "accuracy": 0.905, "accuracy_95ci": [0.845, 0.957], "macro_f1": 0.796, "harmful_allowed": "1/53", "benign_blocked": "0/49", "benign_reviewed": "0/49", "intent_accuracy": 0.647}}
+cached 100/129 (3s)
+cached 100/129 (4s)
+storyleak: {"n_with_story": 129, "story_stripped": {"n": 129, "accuracy": 0.946, "accuracy_95ci": [0.899, 0.977], "macro_f1": 0.858, "harmful_allowed": "0/61", "benign_blocked": "0/57", "benign_reviewed": "0/57", "intent_accuracy": 0.953}, "story_included": {"n": 129, "accuracy": 0.938, "accuracy_95ci": [0.891, 0.977], "macro_f1": 0.845, "harmful_allowed": "0/61", "benign_blocked": "0/57", "benign_reviewed": "1/57", "intent_accuracy": 0.953}}
+cached 100/140 (3s)
+maxlen 128: {"n": 140, "accuracy": 0.95, "accuracy_95ci": [0.914, 0.979], "macro_f1": 0.889, "harmful_allowed": "0/65", "benign_blocked": "0/61", "benign_reviewed": "1/61", "intent_accuracy": 0.95}
+cached 100/140 (3s)
+maxlen 256: {"n": 140, "accuracy": 0.95, "accuracy_95ci": [0.914, 0.979], "macro_f1": 0.889, "harmful_allowed": "0/65", "benign_blocked": "0/61", "benign_reviewed": "1/61", "intent_accuracy": 0.957}
+cached 100/140 (3s)
+maxlen 384: {"n": 140, "accuracy": 0.95, "accuracy_95ci": [0.914, 0.979], "macro_f1": 0.889, "harmful_allowed": "0/65", "benign_blocked": "0/61", "benign_reviewed": "1/61", "intent_accuracy": 0.957}
+cached 100/140 (3s)
+maxlen 512: {"n": 140, "accuracy": 0.95, "accuracy_95ci": [0.914, 0.979], "macro_f1": 0.889, "harmful_allowed": "0/65", "benign_blocked": "0/61", "benign_reviewed": "1/61", "intent_accuracy": 0.957}
+latency: {"device": "cpu", "threads": 8, "64": {"p50_ms": 64.3, "p95_ms": 64.4}, "256": {"p50_ms": 139.8, "p95_ms": 140.3}, "1024": {"p50_ms": 446.9, "p95_ms": 447.5}}
+wrote runs/2026-11-01-mac-probe/probe.json
