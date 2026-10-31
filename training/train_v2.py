@@ -334,7 +334,13 @@ def main() -> None:
     print(f"trainable: encoder {sum(p.numel() for p in enc_params) / 1e6:.1f}M, heads "
           f"{sum(p.numel() for p in head_params) / 1e6:.1f}M", flush=True)
 
-    best, history = -1.0, []
+    def selection_key(m: dict) -> tuple[float, float]:
+        """A guardrail is selected on letting nothing harmful through first, quality second.
+        Macro-F1 alone picked an epoch that allowed a harmful request while a later epoch allowed none."""
+        allowed, total = (int(x) for x in m["harmful_allowed"].split("/"))
+        return (-(allowed / max(1, total)), m["macro_f1"])
+
+    best, best_ep, history = (-1e9, -1e9), 0, []
     for ep in range(a.epochs):
         model.train()
         t0, tot = time.time(), Counter()
@@ -360,8 +366,8 @@ def main() -> None:
         val = report(predict(model, splits["val"], tok.pad_token_id))
         history.append({"epoch": ep + 1, "loss": {k: round(v / len(bl), 3) for k, v in tot.items()}, "val": val["final"]})
         print(f"epoch {ep + 1} done in {time.time() - t0:.0f}s | val {json.dumps(val['final'])}", flush=True)
-        if val["final"]["macro_f1"] > best:
-            best = val["final"]["macro_f1"]
+        if selection_key(val["final"]) > best:
+            best, best_ep = selection_key(val["final"]), ep + 1
             torch.save({k: v for k, v in model.state_dict().items()
                         if not k.startswith("encoder.") or any(f"layers.{i}." in k for i in range(
                             len(model.encoder.layers) - a.train_layers, len(model.encoder.layers))) or "norm" in k},
@@ -370,6 +376,11 @@ def main() -> None:
     state = torch.load(out / "checkpoint.pt", map_location=DEV)
     model.load_state_dict(state, strict=False)
     results["history"] = history
+    results["best_epoch"] = best_ep
+    results["selection"] = "fewest harmful allowed on val, then macro-F1"
+    print(f"selected epoch {best_ep} of {a.epochs}", flush=True)
+    if best_ep <= a.epochs - 3:
+        print(f"note: nothing improved after epoch {best_ep}; {a.epochs} epochs was more than needed", flush=True)
     for name in ("val", "test_id", "test_ood"):
         preds = predict(model, splits[name], tok.pad_token_id)
         results[name] = report(preds)

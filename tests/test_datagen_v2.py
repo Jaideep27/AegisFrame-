@@ -316,3 +316,10 @@ def test_handwritten_batch_expands_to_teacher_format():
     v = teacher.parse_json(raw)["versions"][0]
     assert v["segments"] == [{"type": "story", "text": "s"}, {"type": "request", "text": "r"}]
     assert v["history"] == [] and v["mentions"] == {"NEW": ["1"]}
+
+
+def test_driving_licence_issued_to_adults():
+    for i in range(400):
+        d = doclib.make("driving_licence", random.Random(i).choice(list(regions.LOCALES)), random.Random(i))
+        dates = {f.key: f.raw for f in d.all_facts() if f.kind == "date"}
+        assert (dates["Date of Issue"] - dates["Date of Birth"]).days >= 365 * 18
