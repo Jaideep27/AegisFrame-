@@ -1,0 +1,95 @@
+device: mps
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+{'train': 327, 'val': 67, 'test_ood': 82, 'test_id': 34} | train decisions {'BLOCK': 158, 'ALLOW': 150, 'REVIEW': 19}
+W1031 19:14:26.210000 17958 .venv/lib/python3.13/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/236 [00:00<?, ?it/s]Loading weights:   0%|          | 1/236 [00:00<00:44,  5.28it/s]Loading weights: 100%|██████████| 236/236 [00:00<00:00, 1228.52it/s]
+cached 100/510 (5s)
+cached 200/510 (9s)
+cached 300/510 (12s)
+cached 400/510 (16s)
+cached 500/510 (19s)
+frozen baseline (11s): {"val": {"n": 67, "accuracy": 0.657, "accuracy_95ci": [0.552, 0.776], "macro_f1": 0.524, "harmful_allowed": "2/31", "benign_blocked": "13/31", "benign_reviewed": "2/31"}, "test_id": {"n": 34, "accuracy": 0.588, "accuracy_95ci": [0.412, 0.765], "macro_f1": 0.539, "harmful_allowed": "2/15", "benign_blocked": "3/15", "benign_reviewed": "3/15"}, "test_ood": {"n": 82, "accuracy": 0.671, "accuracy_95ci": [0.573, 0.768], "macro_f1": 0.613, "harmful_allowed": "5/38", "benign_blocked": "9/36", "benign_reviewed": "7/36"}}
+trainable: encoder 33.4M, heads 2.6M
+/Users/geethadevi/Desktop/AegisFrame/aegis-mac/training/train_v2.py:357: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+  tot.update({k: float(v) for k, v in parts.items()})
+ep 1 batch 1/59 loss 9.592 (4s)
+ep 1 batch 11/59 loss 8.932 (11s)
+ep 1 batch 21/59 loss 5.357 (16s)
+ep 1 batch 31/59 loss 6.887 (20s)
+ep 1 batch 41/59 loss 3.638 (25s)
+ep 1 batch 51/59 loss 6.286 (29s)
+epoch 1 done in 35s | val {"n": 67, "accuracy": 0.791, "accuracy_95ci": [0.687, 0.881], "macro_f1": 0.64, "harmful_allowed": "0/31", "benign_blocked": "9/31", "benign_reviewed": "1/31"}
+ep 2 batch 1/59 loss 3.885 (1s)
+ep 2 batch 11/59 loss 2.939 (5s)
+ep 2 batch 21/59 loss 2.250 (10s)
+ep 2 batch 31/59 loss 1.093 (15s)
+ep 2 batch 41/59 loss 1.077 (20s)
+ep 2 batch 51/59 loss 1.246 (25s)
+epoch 2 done in 30s | val {"n": 67, "accuracy": 0.925, "accuracy_95ci": [0.851, 0.985], "macro_f1": 0.747, "harmful_allowed": "0/31", "benign_blocked": "1/31", "benign_reviewed": "0/31"}
+ep 3 batch 1/59 loss 1.037 (0s)
+ep 3 batch 11/59 loss 0.868 (5s)
+ep 3 batch 21/59 loss 0.976 (10s)
+ep 3 batch 31/59 loss 2.685 (14s)
+ep 3 batch 41/59 loss 1.221 (19s)
+ep 3 batch 51/59 loss 0.481 (23s)
+epoch 3 done in 29s | val {"n": 67, "accuracy": 0.94, "accuracy_95ci": [0.881, 0.985], "macro_f1": 0.758, "harmful_allowed": "0/31", "benign_blocked": "0/31", "benign_reviewed": "0/31"}
+ep 4 batch 1/59 loss 0.343 (0s)
+ep 4 batch 11/59 loss 0.423 (5s)
+ep 4 batch 21/59 loss 0.239 (10s)
+ep 4 batch 31/59 loss 0.257 (14s)
+ep 4 batch 41/59 loss 0.545 (18s)
+ep 4 batch 51/59 loss 0.048 (23s)
+epoch 4 done in 29s | val {"n": 67, "accuracy": 0.925, "accuracy_95ci": [0.851, 0.985], "macro_f1": 0.747, "harmful_allowed": "0/31", "benign_blocked": "1/31", "benign_reviewed": "0/31"}
+ep 5 batch 1/59 loss 0.254 (0s)
+ep 5 batch 11/59 loss 0.522 (5s)
+ep 5 batch 21/59 loss 0.025 (10s)
+ep 5 batch 31/59 loss 0.008 (14s)
+ep 5 batch 41/59 loss 0.335 (19s)
+ep 5 batch 51/59 loss 0.365 (24s)
+epoch 5 done in 30s | val {"n": 67, "accuracy": 0.94, "accuracy_95ci": [0.881, 0.985], "macro_f1": 0.758, "harmful_allowed": "0/31", "benign_blocked": "0/31", "benign_reviewed": "0/31"}
+ep 6 batch 1/59 loss 0.308 (0s)
+ep 6 batch 11/59 loss 0.212 (5s)
+ep 6 batch 21/59 loss 0.328 (10s)
+ep 6 batch 31/59 loss 0.211 (15s)
+ep 6 batch 41/59 loss 0.018 (20s)
+ep 6 batch 51/59 loss 0.215 (25s)
+epoch 6 done in 33s | val {"n": 67, "accuracy": 0.94, "accuracy_95ci": [0.881, 0.985], "macro_f1": 0.758, "harmful_allowed": "0/31", "benign_blocked": "0/31", "benign_reviewed": "0/31"}
+FINAL {
+ "val": {
+  "n": 67,
+  "accuracy": 0.94,
+  "accuracy_95ci": [
+   0.881,
+   0.985
+  ],
+  "macro_f1": 0.758,
+  "harmful_allowed": "0/31",
+  "benign_blocked": "0/31",
+  "benign_reviewed": "0/31"
+ },
+ "test_id": {
+  "n": 34,
+  "accuracy": 0.941,
+  "accuracy_95ci": [
+   0.853,
+   1.0
+  ],
+  "macro_f1": 0.92,
+  "harmful_allowed": "0/15",
+  "benign_blocked": "1/15",
+  "benign_reviewed": "0/15"
+ },
+ "test_ood": {
+  "n": 82,
+  "accuracy": 0.915,
+  "accuracy_95ci": [
+   0.854,
+   0.964
+  ],
+  "macro_f1": 0.759,
+  "harmful_allowed": "0/38",
+  "benign_blocked": "0/36",
+  "benign_reviewed": "1/36"
+ }
+}
