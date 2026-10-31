@@ -114,10 +114,12 @@ STYLE = ["polite and formal", "casual, lowercase, few commas", "terse and impati
 LENGTH = {"short": (5, 30), "medium": (30, 100), "long": (100, 400)}
 
 
-def pick_story(rng: random.Random, harmful: bool) -> str:
+def pick_story(rng: random.Random, harmful: bool, boost: dict[str, float] | None = None) -> str:
     # same distribution for harmful and benign requests: the story must not predict the label
     keys = list(STORY)
     weights = [0.18] + [0.82 / (len(keys) - 1)] * (len(keys) - 1)
+    if boost:  # a data round can over-sample stories the last model handled badly
+        weights = [w * boost.get(k, 1.0) for k, w in zip(keys, weights)]
     return rng.choices(keys, weights)[0]
 
 

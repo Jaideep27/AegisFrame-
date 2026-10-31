@@ -69,15 +69,19 @@ def _labels(plan: edits.EditPlan, doc: doclib.Doc, deceptive: bool, rng: random.
 
 
 def make_group(rng: random.Random, gid: str, family: str | None = None, locale: str | None = None,
-               ood_family: bool = False, lang: str | None = None) -> list[Spec]:
-    """One record, one story, and either a harmful/benign twin pair or a single grey request."""
+               ood_family: bool = False, lang: str | None = None, focus: dict | None = None) -> list[Spec]:
+    """One record, one story, and either a harmful/benign twin pair or a single grey request.
+
+    focus (optional) steers a targeted data round: {"grey_share": 0.18, "harmful_mix": {...}, "story_boost": {...}}.
+    Labels still come from guideline.decide(); focus only changes how often each kind of case is drawn."""
+    focus = focus or {}
     family = family or rng.choice(doclib.ood_families() if ood_family else doclib.train_families())
     locale = locale or rng.choice(list(R.LOCALES))
     loc = R.LOCALES[locale]
     doc = doclib.make(family, locale, rng)
     lang = lang or R.pick_lang(rng, loc)
     held_out_tech = rng.random() < 0.06
-    story = P.pick_story(rng, True)
+    story = P.pick_story(rng, True, focus.get("story_boost"))
     technique = rng.choice(sorted(OOD_TECHNIQUES)) if held_out_tech else \
         P.pick_technique(rng, story, OOD_TECHNIQUES)
     tactics = P.pick_tactics(rng, lang)
@@ -92,11 +96,12 @@ def make_group(rng: random.Random, gid: str, family: str | None = None, locale: 
         return Spec(sid, gid, role, family, doc.category, locale, loc.region, lang, story, technique, tac, length,
                     persona, style, deceptive, asdict(plan), _layout_dict(doc, plan), decision, reliance, ood)
 
-    if rng.random() < 0.18:  # a group holds one grey request vs two twins: ~10% of samples
+    if rng.random() < focus.get("grey_share", 0.18):  # a group holds one grey request vs two twins: ~10% of samples
         plan = edits.grey(doc, rng)
         return [spec("grey", plan, rng.random() < 0.15, f"{gid}-g")]
 
-    intent = rng.choices(list(HARMFUL_MIX), list(HARMFUL_MIX.values()))[0]
+    mix = focus.get("harmful_mix", HARMFUL_MIX)
+    intent = rng.choices(list(mix), list(mix.values()))[0]
     n_fields = rng.randint(2, 4) if "multi_field" in tactics else 1
     negate = "negated_marking" in tactics
     harm = edits.plan_for(doc, rng, intent, n_fields, negate)
@@ -106,10 +111,11 @@ def make_group(rng: random.Random, gid: str, family: str | None = None, locale: 
     return [spec("harmful", harm, deceptive, f"{gid}-h"), spec("benign_twin", twin, False, f"{gid}-b")]
 
 
-def sample(n_groups: int, seed: int, ood_share: float = 0.1, lang: str | None = None) -> list[Spec]:
+def sample(n_groups: int, seed: int, ood_share: float = 0.1, lang: str | None = None,
+           focus: dict | None = None) -> list[Spec]:
     """lang fixes the message language for every group (e.g. "en"); records stay worldwide."""
     rng = random.Random(seed)
     out: list[Spec] = []
     for i in range(n_groups):
-        out += make_group(rng, f"g{seed}-{i:06d}", ood_family=rng.random() < ood_share, lang=lang)
+        out += make_group(rng, f"g{seed}-{i:06d}", ood_family=rng.random() < ood_share, lang=lang, focus=focus)
     return out

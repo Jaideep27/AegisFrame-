@@ -18,3 +18,5 @@ dist/
 aegis-mac.zip
 *.log
 models_train_*.log
+!data/aegis_v2/en_r1/
+!data/aegis_v2/en_all/
