@@ -686,12 +686,15 @@ def _icard(b: B):
 
 
 # ------------------------------------------------------------------ identity and travel
-def _id_base(b: B, number_pat: str, expiry: bool = True) -> str:
+def _id_base(b: B, number_pat: str, expiry: bool = True, min_age: int = 0) -> str:
     name = b.person("Name").value
     b.ident("Document Number", number_pat, True)
-    b.date("Date of Birth", R.a_date(b.rng, 1962, 2006), critical=True, cls="identity")
+    dob = b.date("Date of Birth", R.a_date(b.rng, 1962, 2006), critical=True, cls="identity").raw
     if expiry:
         s = b.when(2016, 2024)
+        adult = dob + timedelta(days=round(365.25 * min_age))
+        if s < adult:  # e.g. no driving licence before 18; no extra random draw, so other records stay the same
+            s = adult + timedelta(days=s.toordinal() % 300)
         b.date("Date of Issue", s)
         b.date("Date of Expiry", s + timedelta(days=365 * b.rng.choice([5, 10])), True, True)
     return name
@@ -717,7 +720,7 @@ def _pp(b: B):
 @family("driving_licence", "identity", ("driving licence", "driver's license"), ("court_police", "merchant_counterparty",
                                                                                 "government"))
 def _dl(b: B):
-    name = _id_base(b, "AA99 99999999999")
+    name = _id_base(b, "AA99 99999999999", min_age=18)
     b.text("Vehicle Classes", b.rng.choice(["B", "LMV", "A, B", "Class C"]), "credential_result", True,
            "A, B, C, D (heavy)", "status")
     return "Driving Licence", gov(b, "Transport Authority"), name, [], []
