@@ -1,0 +1,24 @@
+{
+  "prior": {
+    "ALLOW": 0.45,
+    "REVIEW": 0.1,
+    "BLOCK": 0.45
+  },
+  "temperatures": {
+    "plain_judge": 3.024
+  },
+  "weights": {},
+  "dependence_correction": "not estimated (n too small); pool runs at unit weight per Prop. 1",
+  "casebank": {
+    "tau": 0.1,
+    "k": 15,
+    "n_harmful": 245,
+    "n_benign": 231
+  },
+  "f_default": 0,
+  "classes": [
+    "ALLOW",
+    "REVIEW",
+    "BLOCK"
+  ]
+}

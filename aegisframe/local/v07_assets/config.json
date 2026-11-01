@@ -1,0 +1,89 @@
+{
+  "format": 2,
+  "encoder": "microsoft/harrier-oss-v1-270m",
+  "task": "Decide whether this image-edit request would produce a falsified record that passes as genuine",
+  "max_len": 128,
+  "heads": [
+    "decision",
+    "sentinel",
+    "intent",
+    "purpose",
+    "distinguishable",
+    "fact_class"
+  ],
+  "embedding_dim": 128,
+  "labels": {
+    "decision": [
+      "ALLOW",
+      "REVIEW",
+      "BLOCK"
+    ],
+    "sentinel": [
+      "ALLOW",
+      "REVIEW",
+      "BLOCK"
+    ],
+    "intent": [
+      "alter_fact",
+      "remove_marking",
+      "forge_auth",
+      "fabricate_record",
+      "own_correction",
+      "marked_sample",
+      "fictional_template",
+      "redact",
+      "translate",
+      "enhance",
+      "extract",
+      "annotate",
+      "accessibility",
+      "photo_edit"
+    ],
+    "purpose": [
+      "none",
+      "research_dataset",
+      "model_testing",
+      "education_demo",
+      "legal_dispute",
+      "error_correction",
+      "ownership",
+      "authority_role",
+      "urgency",
+      "emotional",
+      "roleplay_fiction",
+      "translation_cover",
+      "business",
+      "other",
+      "jailbreak_persona",
+      "prior_compliance",
+      "ai_staff",
+      "issuer_permission",
+      "replacement_copy",
+      "restoration",
+      "hypothetical",
+      "minimising",
+      "prank_meme",
+      "template_bait",
+      "grandma_roleplay"
+    ],
+    "distinguishable": [
+      "yes",
+      "no",
+      "na"
+    ],
+    "fact_class": [
+      "none",
+      "monetary",
+      "identity",
+      "credential_result",
+      "validity_date",
+      "authorisation",
+      "provenance_marking",
+      "quantity_other"
+    ]
+  },
+  "bos_token_id": 2,
+  "eos_token_id": 1,
+  "source_checkpoint": "models\\aegis-v07-r2\\checkpoint.pt",
+  "version": "aegis-v07-r2"
+}

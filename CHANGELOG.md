@@ -2,6 +2,12 @@
 
 ## 0.7.1
 
+- **Fix: `HarrierGuard.load()` now downloads the model on first use.** In 0.7.0 the download code
+  existed but was never called from `load()`, so a fresh `pip install` followed by `HarrierGuard.load()`
+  raised "no v0.7 model". Now the first call fetches the model from Hugging Face into
+  `~/.cache/aegisframe/models/aegis-v07` and every later call loads from cache.
+- **Only the two large files are downloaded.** The model config, case bank and calibration (~0.5 MB)
+  ship inside the package; just `model.int8.onnx` and `tokenizer.json` (~305 MB) come from Hugging Face.
 - **More robust model download.** Download-on-first-use now retries with exponential backoff (2-30s, six
   tries) and a browser user-agent, and catches the Windows connection-reset error. Hugging Face's serving
   layer intermittently resets or throttles connections; the previous three short tries could fail on a

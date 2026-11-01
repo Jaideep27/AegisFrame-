@@ -25,7 +25,34 @@ from pathlib import Path
 from .council.blackboard import Blackboard, Verdict
 from .council.casebank import CaseBank
 from .errors import GuardUnavailable
+from .local.download import ModelManifest, ensure_model
 from .local.harrier import HarrierModel
+
+
+def _install_bundled_assets(target: Path) -> None:
+    """Copy the small files that ship inside the package (config, case bank, calibration) into the
+    model directory. Only the two large binaries are downloaded; small files go through Hugging Face's
+    least reliable serving path, so they are bundled instead."""
+    import importlib.resources as resources
+    import shutil
+
+    root = resources.files("aegisframe.local") / "v07_assets"
+    for rel in ("config.json", "fusion/casebank.npz", "fusion/fusion.json"):
+        dest = Path(target) / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with resources.as_file(root.joinpath(*rel.split("/"))) as src:
+            shutil.copyfile(src, dest)
+
+
+def _bundled_manifest() -> ModelManifest:
+    """The model manifest shipped inside the package, naming the download URL and per-file SHA-256."""
+    import importlib.resources as resources
+
+    text = (resources.files("aegisframe.local") / "model_manifest.json").read_text(encoding="utf-8")
+    import json as _json
+
+    d = _json.loads(text)
+    return ModelManifest(version=d["version"], base_url=d["base_url"], files=d["files"])
 
 #: lead-in clauses people put before the real ask; stripped to approximate the story-blind instruction
 _STORY_LEAD = re.compile(
@@ -73,6 +100,12 @@ class HarrierGuard:
 
     @classmethod
     def load(cls, path: str | Path | None = None, f: int | None = None, **model_kw) -> HarrierGuard:
+        if path is None and not HarrierModel.available(None):
+            from .local.harrier import resolve_path
+
+            target = resolve_path(None)
+            ensure_model(_bundled_manifest(), target)  # the two large binaries, from Hugging Face
+            _install_bundled_assets(target)            # config + fusion files ship inside the package
         model = HarrierModel.load(path, **model_kw) if path is None else HarrierModel(path, **model_kw)
         base = Path(model.path)
         fusion_dir = base / "fusion"
