@@ -46,9 +46,15 @@ def build_tools(guard) -> dict[str, Callable]:
     last: "OrderedDict[str, object]" = OrderedDict()
 
     def check_request(prompt: str, context: str = "", session_id: str = "",
-                      request_id: str = "") -> str:
+                      request_id: str = "", image_b64: str = "") -> str:
         hist = history[session_id] if session_id else None
-        v = guard.check(prompt, context=context, history=list(hist) if hist else None)
+        hist_arg = list(hist) if hist else None
+        if image_b64:
+            import base64
+
+            v = guard.check_image(base64.b64decode(image_b64), prompt, history=hist_arg)
+        else:
+            v = guard.check(prompt, context=context, history=hist_arg)
         if session_id:
             history[session_id].append(prompt)
         if request_id:

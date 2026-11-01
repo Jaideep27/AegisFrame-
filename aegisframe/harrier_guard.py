@@ -60,9 +60,10 @@ def canonical_instruction(prompt: str) -> str:
 
 class HarrierGuard:
     def __init__(self, model, casebank: CaseBank | None = None, fusion: dict | None = None,
-                 f: int | None = None):
+                 f: int | None = None, ocr=None):
         self.model = model
         self.casebank = casebank
+        self.ocr = ocr
         self.fusion = fusion or {}
         prior = self.fusion.get("prior")
         weights = self.fusion.get("weights") or {}
@@ -88,3 +89,20 @@ class HarrierGuard:
         plain = canonical_instruction(prompt)
         v = self.blackboard.assess(context, prompt, plain=plain, history=history)
         return HarrierVerdict.from_blackboard(v)
+
+    def check_image(self, image: bytes, prompt: str, history: list[str] | None = None,
+                    ocr=None) -> HarrierVerdict:
+        """OCR the image into the table-aware context the model was trained on, then check.
+
+        The record is read as a layout (header, key-values, table rows) and rendered in the same
+        `[DOC] ... [TABLE] ...` form the training data used, so a forged table cell is seen in context.
+        """
+        from .ocr.layout import from_lines, render
+
+        engine = ocr or self.ocr
+        if engine is None:
+            from .ground import RapidOcrEngine
+
+            engine = self.ocr = RapidOcrEngine()
+        context = render(from_lines(engine.read(image)))
+        return self.check(prompt, context=context, history=history)

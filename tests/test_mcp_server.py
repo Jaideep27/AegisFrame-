@@ -70,3 +70,19 @@ def test_the_server_object_builds_without_a_transport():
     """Constructing the FastMCP app must not require loading the real model."""
     app = mcp_server.build_server(FakeGuard())
     assert app is not None
+
+
+def test_check_request_accepts_a_base64_image():
+    import base64
+
+    class ImgGuard(FakeGuard):
+        def check_image(self, image, prompt, history=None):
+            self.calls.append(("image", len(image), prompt))
+            return FakeVerdict("BLOCK")
+
+    guard = ImgGuard()
+    tools = mcp_server.build_tools(guard)
+    b64 = base64.b64encode(b"PNGBYTES").decode()
+    out = json.loads(tools["check_request"]("change my marks", image_b64=b64))
+    assert out["decision"] == "BLOCK"
+    assert guard.calls[-1][0] == "image"

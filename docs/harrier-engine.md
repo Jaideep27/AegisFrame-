@@ -62,3 +62,15 @@ refuse on `BLOCK`.
 All reported numbers are on Claude-written synthetic test sets (`results/eval_v2.json`). No human-written
 test set exists yet, so no real-world accuracy is claimed. A bare question that names a field can still be
 over-blocked by the model; the council cannot override a confident wrong head.
+
+## Judging an image directly
+
+`check_image(image_bytes, prompt)` OCRs the record with RapidOCR, rebuilds its layout (header,
+key-values, table rows) and renders it in the same `[DOC] … [TABLE] …` form the model was trained on,
+then judges the prompt against it. A forged table cell is seen in context, not lost in a flat blob.
+
+Any OCR engine implementing the `OcrEngine` protocol can be passed as `ocr=` — this is the extension
+point for the accurate (LightOnOCR) and native (PaddleOCR/PP-StructureV3) tiers; install those yourself
+and pass an adapter. The default RapidOCR tier ships with the package.
+
+The MCP `check_request` tool also accepts a base64 `image_b64` and routes it through `check_image`.
