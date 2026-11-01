@@ -7,8 +7,8 @@ The graph is ONE pass: (input_ids, attention_mask) -> the six head logits. The r
 taking the full-pass heads from the raw message and the plain-pass heads from the story-stripped message,
 which is exactly what training did with two passes through one encoder.
 
-    uv run --group train python -m training.export_v2 --model models/aegis-v07-r1 \
-        --out models/aegis-v07-r1-onnx --max-len 128
+    uv run --group train python -m training.export_v2 --model models/aegis-v07-r2 \
+        --out models/aegis-v07-r2-onnx --max-len 128
 """
 
 from __future__ import annotations
@@ -151,8 +151,8 @@ def export(model_dir: str | Path, out: str | Path, max_len: int = 128, quantize:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="models/aegis-v07-r1")
-    ap.add_argument("--out", default="models/aegis-v07-r1-onnx")
+    ap.add_argument("--model", default="models/aegis-v07-r2")
+    ap.add_argument("--out", default="models/aegis-v07-r2-onnx")
     ap.add_argument("--max-len", type=int, default=128)
     ap.add_argument("--train-layers", type=int, default=6)
     ap.add_argument("--no-quantize", action="store_true")

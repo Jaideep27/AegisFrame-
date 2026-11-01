@@ -15,7 +15,7 @@ import sys
 from aegisframe.local.harrier import HarrierModel
 
 
-def main(path: str, model_dir: str = "models/aegis-v07-r1-onnx") -> None:
+def main(path: str, model_dir: str = "models/aegis-v07-r2-onnx") -> None:
     m = HarrierModel(model_dir, threads=8)
     rows = [json.loads(line) for line in open(path, encoding="utf-8") if line.strip()]
     labelled = any("expected" in r for r in rows)

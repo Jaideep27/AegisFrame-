@@ -5,7 +5,7 @@ OCR-style record text, the council's agents turn its heads plus a deterministic 
 messages, and the pool fuses them into ALLOW / REVIEW / BLOCK with a full trace. The v0.6 Guard stays as
 the image-pipeline engine; this is the one the v0.7 report measured and the one the MCP server calls.
 
-    guard = HarrierGuard.load("models/aegis-v07-r1-onnx")
+    guard = HarrierGuard.load("models/aegis-v07-r2-onnx")
     v = guard.check("change the net pay to 90,000", context="Record:\nPayslip\nNet Pay: 42,700\n")
     v.decision        # "BLOCK"
     v.trace           # one row per agent: name, message, whether it fired, a note

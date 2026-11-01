@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-CHECKPOINT = Path("models/aegis-v07-r1/checkpoint.pt")
+CHECKPOINT = Path("models/aegis-v07-r2/checkpoint.pt")
 pytestmark = [
     pytest.mark.harrier,
     pytest.mark.skipif(not CHECKPOINT.exists(), reason=f"no trained checkpoint at {CHECKPOINT}"),

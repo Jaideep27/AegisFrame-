@@ -2,7 +2,7 @@
 
 Run where the checkpoint lives (the Mac):
 
-    uv run --group train python -m training.probe_v2 --model models/aegis-v07-r1 \
+    uv run --group train python -m training.probe_v2 --model models/aegis-v07-r2 \
         --data data/aegis_v2/en_all --device mps --out runs/2026-11-01-probe
 
 Probes
@@ -65,7 +65,7 @@ def latency(model: T.PilotModel, pad_id: int, lengths=(64, 256, 1024), reps: int
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="models/aegis-v07-r1")
+    ap.add_argument("--model", default="models/aegis-v07-r2")
     ap.add_argument("--data", default="data/aegis_v2/en_all")
     ap.add_argument("--out", default="runs/probe")
     ap.add_argument("--device", default="auto")

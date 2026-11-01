@@ -9,7 +9,7 @@ engine is a separate entry point, `HarrierGuard`.
 ```python
 from aegisframe import HarrierGuard
 
-guard = HarrierGuard.load("models/aegis-v07-r1-onnx")   # or a cached/installed model
+guard = HarrierGuard.load("models/aegis-v07-r2-onnx")   # or a cached/installed model
 v = guard.check("change the net pay to 90,000",
                 context="Record:\nPayslip\nNet Pay: 42,700\n")
 v.decision        # "BLOCK"
@@ -37,9 +37,9 @@ before an ALLOW stands. At the current data scale `f=1` reviews most benign requ
 ## Building the model artifacts
 
 ```bash
-uv run python -m training.export_v2  --model models/aegis-v07-r1 --out models/aegis-v07-r1-onnx --max-len 128
-uv run python -m training.train_fusion --model models/aegis-v07-r1-onnx --data data/aegis_v2/en_all
-uv run python -m training.eval_v2       --model models/aegis-v07-r1-onnx --data data/aegis_v2/en_all
+uv run python -m training.export_v2  --model models/aegis-v07-r2 --out models/aegis-v07-r2-onnx --max-len 128
+uv run python -m training.train_fusion --model models/aegis-v07-r2-onnx --data data/aegis_v2/en_all
+uv run python -m training.eval_v2       --model models/aegis-v07-r2-onnx --data data/aegis_v2/en_all
 ```
 
 `export_v2` writes the ONNX model and tokenizer; `train_fusion` writes the `fusion/` directory (case bank

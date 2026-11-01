@@ -11,7 +11,7 @@ from aegisframe.local.harrier import HarrierModel
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("path")
-    ap.add_argument("--model", default="models/aegis-v07-r1-onnx")
+    ap.add_argument("--model", default="models/aegis-v07-r2-onnx")
     ap.add_argument("--f", type=int, default=1)
     a = ap.parse_args()
     from aegisframe.harrier_guard import canonical_instruction

@@ -13,7 +13,7 @@ import pytest
 
 from aegisframe.harrier_guard import HarrierGuard, HarrierVerdict
 
-MODEL = Path("models/aegis-v07-r1-onnx")
+MODEL = Path("models/aegis-v07-r2-onnx")
 
 
 class FakeAnalysis:

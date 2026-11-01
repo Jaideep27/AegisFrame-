@@ -8,7 +8,7 @@ construction: the node calls `check` and copies its verdict into the state.
     from aegisframe import HarrierGuard
     from aegisframe.integrations.langgraph import build_guard_graph
 
-    graph = build_guard_graph(HarrierGuard.load("models/aegis-v07-r1-onnx"))
+    graph = build_guard_graph(HarrierGuard.load("models/aegis-v07-r2-onnx"))
     state = graph.invoke({"prompt": "...", "context": "Record:\n..."})
     state["decision"], state["route"]   # "BLOCK", "refuse"
 """

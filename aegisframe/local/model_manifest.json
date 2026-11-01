@@ -1,0 +1,11 @@
+{
+  "version": "aegis-v07-r2",
+  "base_url": "https://github.com/Jaideep27/AegisFrame-/releases/download/v0.7.0/",
+  "files": {
+    "model.int8.onnx": "eb12ff841afeb8312301197dae69c513d02d55b4ad995d3923909c0507ce2fbd",
+    "tokenizer.json": "11acfd476d36d457f3354aef39e503155cbcd3dfbf8a6c335ec4ecaca87ee437",
+    "config.json": "0aa541186e66b4981c643dd01732107d1decd2c215af11365a2d707288db49c2",
+    "fusion/casebank.npz": "cc89d153a06cec9b249888bbb2a2f19b1548660ef3db5dd0d693c92792d7f116",
+    "fusion/fusion.json": "b53d62f558a3cd8f08630e8d199d46fb838cdb9ced6d5f5d4d035d9d8b12dfbc"
+  }
+}

@@ -8,7 +8,9 @@ ratios. The 0.6.0 image-pipeline engine is unchanged and still available.
 
 - **New encoder.** Harrier-OSS-v1-270M, fine-tuned on 813 Claude-written English records, exported to
   int8 ONNX (about 272 MB + a 33 MB tokenizer; downloaded, not bundled). Two passes through one encoder:
-  a story-blind decision and a raw-text sentinel that may only raise it.
+  a story-blind decision and a raw-text sentinel that may only raise it. Ships the round-2 model, which
+  adds a BIO token-tagging head (FIELD/OLD/NEW/MARK/OBJ/STORY, held-out F1 ~0.74) and runs at a 128-token
+  budget. It also reads an image directly (`check_image`): OCR -> table-aware layout -> decision.
 - **`HarrierGuard`** (`aegisframe.harrier_guard`): the v0.7 entry point. `check(prompt, context)` returns
   ALLOW / REVIEW / BLOCK with the full agent trace.
 - **Council as log-linear fusion** (`aegisframe.council.fusion`, `blackboard`, `casebank`): eight agents
@@ -20,11 +22,11 @@ ratios. The 0.6.0 image-pipeline engine is unchanged and still available.
 - **Measured results** (Claude-written synthetic test sets, not human-written prompts; see
   `results/eval_v2.json` and the v0.7 report). Fine-tuned model, held-out families and tactics:
 
-  | Split | n | model-only accuracy | harmful allowed |
-  |---|---|---|---|
-  | val | 89 | 0.899 | 0/39 (fused) |
-  | test_id | 57 | 0.930 | 0/26 |
-  | test_ood | 140 | 0.957 | 0/65 |
+  | Split | n | model-only acc | fused acc | harmful allowed | token-tag F1 |
+  |---|---|---|---|---|---|
+  | val | 89 | 0.966 | 0.933 | 0/39 | 0.715 |
+  | test_id | 57 | 0.947 | 0.895 | 0/26 | 0.769 |
+  | test_ood | 140 | 0.957 | 0.936 | 0/65 | 0.757 |
 
   The fused council trades a little synthetic accuracy to drive harmful-allowed to zero and for
   robustness; its gain shows on out-of-distribution prose, not on the synthetic set the model already

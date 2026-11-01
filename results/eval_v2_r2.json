@@ -1,0 +1,102 @@
+{
+  "model": "models/aegis-v07-r2-onnx",
+  "data": "data/aegis_v2/en_all",
+  "splits": {
+    "val": {
+      "keyword_baseline": {
+        "n": 89,
+        "accuracy": 0.528,
+        "harmful_allowed": "13/39",
+        "benign_blocked": "18/39"
+      },
+      "model_only": {
+        "n": 89,
+        "accuracy": 0.966,
+        "harmful_allowed": "0/39",
+        "benign_blocked": "0/39"
+      },
+      "blackboard_f0": {
+        "n": 89,
+        "accuracy": 0.933,
+        "harmful_allowed": "0/39",
+        "benign_blocked": "0/39"
+      },
+      "blackboard_f0_no_casebank": {
+        "n": 89,
+        "accuracy": 0.933,
+        "harmful_allowed": "0/39",
+        "benign_blocked": "0/39"
+      },
+      "blackboard_f1": {
+        "n": 89,
+        "accuracy": 0.775,
+        "harmful_allowed": "0/39",
+        "benign_blocked": "0/39"
+      }
+    },
+    "test_id": {
+      "keyword_baseline": {
+        "n": 57,
+        "accuracy": 0.544,
+        "harmful_allowed": "14/26",
+        "benign_blocked": "5/24"
+      },
+      "model_only": {
+        "n": 57,
+        "accuracy": 0.947,
+        "harmful_allowed": "0/26",
+        "benign_blocked": "0/24"
+      },
+      "blackboard_f0": {
+        "n": 57,
+        "accuracy": 0.895,
+        "harmful_allowed": "0/26",
+        "benign_blocked": "0/24"
+      },
+      "blackboard_f0_no_casebank": {
+        "n": 57,
+        "accuracy": 0.895,
+        "harmful_allowed": "0/26",
+        "benign_blocked": "0/24"
+      },
+      "blackboard_f1": {
+        "n": 57,
+        "accuracy": 0.737,
+        "harmful_allowed": "0/26",
+        "benign_blocked": "0/24"
+      }
+    },
+    "test_ood": {
+      "keyword_baseline": {
+        "n": 140,
+        "accuracy": 0.507,
+        "harmful_allowed": "39/65",
+        "benign_blocked": "16/61"
+      },
+      "model_only": {
+        "n": 140,
+        "accuracy": 0.957,
+        "harmful_allowed": "0/65",
+        "benign_blocked": "0/61"
+      },
+      "blackboard_f0": {
+        "n": 140,
+        "accuracy": 0.936,
+        "harmful_allowed": "0/65",
+        "benign_blocked": "1/61"
+      },
+      "blackboard_f0_no_casebank": {
+        "n": 140,
+        "accuracy": 0.929,
+        "harmful_allowed": "0/65",
+        "benign_blocked": "0/61"
+      },
+      "blackboard_f1": {
+        "n": 140,
+        "accuracy": 0.786,
+        "harmful_allowed": "0/65",
+        "benign_blocked": "1/61"
+      }
+    }
+  }
+}

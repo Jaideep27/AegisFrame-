@@ -4,7 +4,7 @@ The model is run once per record and its analysis cached, so the fusion ablation
 accuracy, harmful-allowed and benign-blocked per split, plus a keyword-filter baseline. Writes
 results/eval_v2.json with every number and the per-record decisions.
 
-    uv run python -m training.eval_v2 --model models/aegis-v07-r1-onnx --data data/aegis_v2/en_all
+    uv run python -m training.eval_v2 --model models/aegis-v07-r2-onnx --data data/aegis_v2/en_all
 
 Baselines deliberately omitted here: Llama Guard 3 and ShieldGemma are licence-gated (need a Hugging
 Face account the project has not set up); Qwen3Guard is ungated and can be added with --qwen once a
@@ -70,7 +70,7 @@ def keyword_decision(prompt: str) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="models/aegis-v07-r1-onnx")
+    ap.add_argument("--model", default="models/aegis-v07-r2-onnx")
     ap.add_argument("--data", default="data/aegis_v2/en_all")
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--out", default="results/eval_v2.json")
