@@ -26,37 +26,75 @@ import torch
 from torch import nn
 from transformers import AutoModel, AutoTokenizer
 
-from aegisframe.local.labels import DECISION, DISTINGUISHABLE, FACT_CLASS, INTENT, PURPOSE
+from aegisframe.local.harrier import HFTokenizer, build_ids, final_decision, query_prefix
+from aegisframe.local.labels import DECISION, DISTINGUISHABLE, FACT_CLASS, INTENT, PURPOSE, SPAN_TYPES, TAGS
 from reframebench.datagen_v2.validate import plain_text
 
 ENCODER = "microsoft/harrier-oss-v1-270m"
-TASK = "Decide whether this image-edit request would produce a falsified record that passes as genuine"
 FULL_HEADS = {"sentinel": DECISION, "intent": INTENT, "purpose": PURPOSE, "distinguishable": DISTINGUISHABLE}
 PLAIN_HEADS = {"decision": DECISION, "fact_class": FACT_CLASS}
-RISK = {d: i for i, d in enumerate(["ALLOW", "REVIEW", "BLOCK"])}
 DEV = torch.device("cpu")  # set from --device in main()
 
 
 # ------------------------------------------------------------------ inputs
 class Encoder:
-    """Builds [bos] instruction + record + turns + message [eos], cutting the record first when too long."""
+    """[bos] instruction + record + turns + message [eos]. The rule itself lives in the shipped package,
+    aegisframe.local.harrier.build_ids, so training and serving cannot encode a request differently."""
 
     def __init__(self, tok, max_len: int):
         self.tok, self.max_len = tok, max_len
-        self.prefix = tok(f"Instruct: {TASK}\nQuery: ", add_special_tokens=False)["input_ids"]
+        self.wrapped = HFTokenizer(tok)
 
     def ids(self, context: str, message: str) -> list[int]:
-        msg = self.tok(message, add_special_tokens=False)["input_ids"]
-        budget = self.max_len - len(self.prefix) - 2
-        msg = msg[-(budget - 16):] if len(msg) > budget - 16 else msg  # keep the end of very long messages
-        ctx = self.tok(context, add_special_tokens=False)["input_ids"][: max(0, budget - len(msg))]
-        return [self.tok.bos_token_id] + self.prefix + ctx + msg + [self.tok.eos_token_id]
+        return build_ids(self.wrapped, context, message, self.max_len,
+                         self.tok.bos_token_id, self.tok.eos_token_id)
 
 
 def texts(r: dict) -> tuple[str, str, str]:
     ctx = "Record: [no image attached]\n" if r["context"] == "[NO IMAGE]" else f"Record:\n{r['context']}\n"
     turns = "".join(f"Earlier message: {h}\n" for h in r["history"] or [])
     return ctx, f"{turns}Message: {r['prompt']}", f"Message: {plain_text(r)}"
+
+
+_TAG = {t: i for i, t in enumerate(TAGS)}
+
+
+def full_ids_tags(tok, context: str, message: str, prompt: str, spans: list[dict],
+                  max_len: int) -> tuple[list[int], list[int]]:
+    """Full-pass ids (identical to build_ids) plus a BIO tag per token, -100 outside the prompt.
+
+    Spans are char offsets into `prompt`, which is the suffix of `message`. The message tokens are
+    tokenised with offsets, truncated the same way build_ids truncates, and each token that overlaps a
+    span is tagged B-/I-; the instruction prefix, record context and specials are ignored (-100).
+    """
+    prefix = tok(query_prefix(), add_special_tokens=False)["input_ids"]
+    budget = max_len - len(prefix) - 2
+    enc = tok(message, add_special_tokens=False, return_offsets_mapping=True)
+    msg_ids, offs = enc["input_ids"], enc["offset_mapping"]
+    cap = max(1, budget - 16)
+    if len(msg_ids) > cap:
+        msg_ids, offs = msg_ids[-cap:], offs[-cap:]
+    ctx_ids = tok(context, add_special_tokens=False)["input_ids"][: max(0, budget - len(msg_ids))]
+
+    shift = len(message) - len(prompt)  # prompt sits at the end of the message
+    char_tag = [""] * len(message)
+    for sp in spans or []:
+        lo, hi = shift + sp["start"], shift + sp["end"]
+        for c in range(max(0, lo), min(len(message), hi)):
+            char_tag[c] = sp["type"]
+
+    msg_tags, prev = [], ""
+    for a, b in offs:
+        kinds = {char_tag[c] for c in range(a, min(b, len(message))) if char_tag[c]}
+        kind = next(iter(kinds)) if len(kinds) == 1 else ""
+        if kind and kind in SPAN_TYPES:
+            msg_tags.append(_TAG[f"{'I' if prev == kind else 'B'}-{kind}"])
+        else:
+            msg_tags.append(_TAG["O"])
+        prev = kind
+    ids = [tok.bos_token_id, *prefix, *ctx_ids, *msg_ids, tok.eos_token_id]
+    tags = [-100] * (1 + len(prefix) + len(ctx_ids)) + msg_tags + [-100]
+    return ids, tags
 
 
 def label(vocab: list[str], v: str) -> int:
@@ -118,6 +156,7 @@ class PilotModel(nn.Module):
         mk = lambda n: nn.Sequential(nn.Dropout(0.1), nn.Linear(h, h), nn.GELU(), nn.Linear(h, n))
         self.full_heads = nn.ModuleDict({k: mk(len(v)) for k, v in FULL_HEADS.items()})
         self.plain_heads = nn.ModuleDict({k: mk(len(v)) for k, v in PLAIN_HEADS.items()})
+        self.token_head = nn.Sequential(nn.Dropout(0.1), nn.Linear(h, h), nn.GELU(), nn.Linear(h, len(TAGS)))
         self.proj = nn.Linear(h, 128)
 
     @torch.no_grad()
@@ -127,7 +166,7 @@ class PilotModel(nn.Module):
         h = self.encoder.embed_tokens(t)
         return run_layers(self.encoder, h, torch.ones_like(t), 0, self.split)[0]
 
-    def pool(self, cached: list[torch.Tensor]):
+    def pool(self, cached: list[torch.Tensor], return_seq: bool = False):
         n = max(len(c) for c in cached)
         hidden = torch.zeros(len(cached), n, cached[0].shape[-1], device=DEV)
         mask = torch.zeros(len(cached), n, dtype=torch.long, device=DEV)
@@ -136,12 +175,15 @@ class PilotModel(nn.Module):
             mask[i, :len(c)] = 1
         hidden = self.encoder.norm(run_layers(self.encoder, hidden, mask, self.split, self.n_layers))
         last = mask.sum(1) - 1  # right padding: the last real token is the eos
-        return hidden[torch.arange(hidden.size(0), device=DEV), last]
+        pooled = hidden[torch.arange(hidden.size(0), device=DEV), last]
+        return (pooled, hidden) if return_seq else pooled
 
     def forward(self, full, plain):
-        f, p = self.pool(full), self.pool(plain)
+        f, f_seq = self.pool(full, return_seq=True)
+        p = self.pool(plain)
         out = {k: h(f) for k, h in self.full_heads.items()}
         out.update({k: h(p) for k, h in self.plain_heads.items()})
+        out["tags"] = self.token_head(f_seq)  # (B, n, len(TAGS)) over the full pass
         out["z"] = nn.functional.normalize(self.proj(p), dim=-1)
         return out
 
@@ -172,7 +214,8 @@ def featurize(rows: list[dict], enc: Encoder) -> list[dict]:
     out = []
     for r in rows:
         ctx, full, plain = texts(r)
-        out.append({"r": r, "full": enc.ids(ctx, full), "plain": enc.ids(ctx, plain), "y": targets(r)})
+        full_ids, tags = full_ids_tags(enc.tok, ctx, full, r["prompt"], r.get("spans") or [], enc.max_len)
+        out.append({"r": r, "full": full_ids, "plain": enc.ids(ctx, plain), "tags": tags, "y": targets(r)})
     return out
 
 
@@ -187,7 +230,16 @@ def group_batches(items: list[dict], groups_per_batch: int, rng: random.Random) 
 
 def tensors(batch: list[dict], pad_id: int = 0) -> dict:
     ys = {k: torch.tensor([b["y"][k] for b in batch], device=DEV) for k in batch[0]["y"]}
-    return {"full": [b["full_h"] for b in batch], "plain": [b["plain_h"] for b in batch], "y": ys}
+    return {"full": [b["full_h"] for b in batch], "plain": [b["plain_h"] for b in batch],
+            "tags": [b["tags"] for b in batch], "y": ys}
+
+
+def tag_targets(tag_lists: list[list[int]], n: int) -> torch.Tensor:
+    """Right-pad each per-token tag list to width n with -100, matching pool's right padding."""
+    out = torch.full((len(tag_lists), n), -100, dtype=torch.long, device=DEV)
+    for i, t in enumerate(tag_lists):
+        out[i, :len(t)] = torch.tensor(t[:n], device=DEV)
+    return out
 
 
 def cache_bottom(model: "PilotModel", splits: dict[str, list[dict]]) -> None:
@@ -202,11 +254,6 @@ def cache_bottom(model: "PilotModel", splits: dict[str, list[dict]]) -> None:
 
 
 # ------------------------------------------------------------------ evaluation
-def final_decision(plain: str, sentinel: str) -> str:
-    """Plain (story-blind) decision; the full-pass sentinel may only raise it."""
-    return plain if RISK[plain] >= RISK[sentinel] else sentinel
-
-
 def metrics(gold: list[str], pred: list[str], seed: int = 0) -> dict:
     g, p = np.array(gold), np.array(pred)
     f1s = []
@@ -235,21 +282,34 @@ def predict(model: PilotModel, items: list[dict], pad_id: int, bs: int = 8) -> l
         chunk = items[i:i + bs]
         b = tensors(chunk)
         o = model(b["full"], b["plain"])
+        tag_pred = o["tags"].argmax(-1)
         for j, it in enumerate(chunk):
             plain = DECISION[int(o["decision"][j].argmax())]
             sent = DECISION[int(o["sentinel"][j].argmax())]
+            gold_tags = it["tags"]
+            pred_tags = tag_pred[j, :len(gold_tags)].tolist()
+            kept = [(g, p) for g, p in zip(gold_tags, pred_tags) if g != -100]
             out.append({"id": it["r"]["id"], "gold": it["r"]["labels"]["decision"], "plain": plain, "sentinel": sent,
                         "final": final_decision(plain, sent), "intent": INTENT[int(o["intent"][j].argmax())],
                         "gold_intent": it["r"]["labels"]["intent"],
-                        "p_block": round(float(o["decision"][j].softmax(-1)[DECISION.index("BLOCK")]), 3)})
+                        "p_block": round(float(o["decision"][j].softmax(-1)[DECISION.index("BLOCK")]), 3),
+                        "tag_tp": sum(g == p and TAGS[g] != "O" for g, p in kept),
+                        "tag_gold": sum(TAGS[g] != "O" for g, _ in kept),
+                        "tag_pred": sum(TAGS[p] != "O" for _, p in kept)})
     return out
 
 
 def report(preds: list[dict]) -> dict:
     gold = [p["gold"] for p in preds]
+    tp = sum(p["tag_tp"] for p in preds)
+    pg = sum(p["tag_gold"] for p in preds)
+    pp = sum(p["tag_pred"] for p in preds)
+    prec, rec = tp / max(1, pp), tp / max(1, pg)
+    tag_f1 = 0.0 if tp == 0 else round(2 * prec * rec / (prec + rec), 3)
     return {"final": metrics(gold, [p["final"] for p in preds]), "plain_only": metrics(gold, [p["plain"] for p in preds]),
             "sentinel_only": metrics(gold, [p["sentinel"] for p in preds]),
-            "intent_accuracy": round(float(np.mean([p["intent"] == p["gold_intent"] for p in preds])), 3)}
+            "intent_accuracy": round(float(np.mean([p["intent"] == p["gold_intent"] for p in preds])), 3),
+            "token_tag_f1": tag_f1}
 
 
 @torch.no_grad()
@@ -354,6 +414,8 @@ def main() -> None:
                      "purpose": ce(o["purpose"], b["y"]["purpose"]) * 0.3,
                      "distinguishable": ce(o["distinguishable"], b["y"]["distinguishable"]) * 0.5,
                      "fact_class": ce(o["fact_class"], b["y"]["fact_class"]) * 0.3,
+                     "tags": ce(o["tags"].reshape(-1, len(TAGS)),
+                               tag_targets(b["tags"], o["tags"].shape[1]).reshape(-1)) * 0.5,
                      "supcon": supcon(o["z"], b["y"]["decision"]) * a.supcon}
             loss = sum(parts.values())
             opt.zero_grad()

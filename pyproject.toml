@@ -1,6 +1,6 @@
 [project]
 name = "aegisframe"
-version = "0.6.0"
+version = "0.7.0"
 description = "Guardrail for AI image editing: a good story should not unlock a forgery."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -35,13 +35,15 @@ ocr = []  # OCR is now a core dependency; kept so `aegisframe[ocr]` still instal
 server = ["fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9"]
 openai = ["openai>=1.40"]
 gemini = ["google-genai>=1.0"]
-all = ["aegisframe[server,openai,gemini]"]
+mcp = ["mcp>=1.2"]
+langgraph = ["langgraph>=0.2"]
+all = ["aegisframe[server,openai,gemini,mcp,langgraph]"]
 
 [project.scripts]
 aegisframe = "aegisframe.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8.0", "fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9"]
+dev = ["pytest>=8.0", "fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9", "mcp>=1.2", "langgraph>=0.2"]
 train = [
     "onnx>=1.23.2",
     "protobuf>=7.36.2",
@@ -66,4 +68,6 @@ include = ["aegisframe", "reframebench", "tests", "docs", "examples", "README.md
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["ocr: needs the optional OCR engine (rapidocr)", "uses_local_model: runs the trained local model"]
+markers = ["ocr: needs the optional OCR engine (rapidocr)", "uses_local_model: runs the trained local model",
+           "harrier: exports and runs the trained v0.7 model (slow; needs models/aegis-v07-r1)"]
+addopts = "-m 'not harrier'"

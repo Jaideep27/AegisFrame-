@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.7.0
+
+Prompt-level rebuild. The guard now judges a document-edit request from the prompt and the OCR-style
+record text, with a fine-tuned encoder and a council that communicates in calibrated log-likelihood
+ratios. The 0.6.0 image-pipeline engine is unchanged and still available.
+
+- **New encoder.** Harrier-OSS-v1-270M, fine-tuned on 813 Claude-written English records, exported to
+  int8 ONNX (about 272 MB + a 33 MB tokenizer; downloaded, not bundled). Two passes through one encoder:
+  a story-blind decision and a raw-text sentinel that may only raise it.
+- **`HarrierGuard`** (`aegisframe.harrier_guard`): the v0.7 entry point. `check(prompt, context)` returns
+  ALLOW / REVIEW / BLOCK with the full agent trace.
+- **Council as log-linear fusion** (`aegisframe.council.fusion`, `blackboard`, `casebank`): eight agents
+  send LLR messages to a pool. Two guarantees are property-tested: a story can never lower risk
+  (Theorem 1), and no `f` agents can by themselves force an ALLOW (Theorem 2). A detected marking removal
+  can never end in ALLOW.
+- **MCP server** (`aegisframe mcp`, extra `aegisframe[mcp]`): `check_request`, `verify_output`,
+  `explain_decision` over stdio or HTTP.
+- **Measured results** (Claude-written synthetic test sets, not human-written prompts; see
+  `results/eval_v2.json` and the v0.7 report). Fine-tuned model, held-out families and tactics:
+
+  | Split | n | model-only accuracy | harmful allowed |
+  |---|---|---|---|
+  | val | 89 | 0.899 | 0/39 (fused) |
+  | test_id | 57 | 0.930 | 0/26 |
+  | test_ood | 140 | 0.957 | 0/65 |
+
+  The fused council trades a little synthetic accuracy to drive harmful-allowed to zero and for
+  robustness; its gain shows on out-of-distribution prose, not on the synthetic set the model already
+  fits. A bare question naming a field can still be over-blocked. No human-written test set exists yet,
+  so no real-world accuracy is claimed. The 0.6.0 figures (92.8%, 41.8%->1.0%) came from template data
+  and are withdrawn.
+
+
 ## 0.6.0
 
 - **Local engine (no API needed).** One fine-tuned encoder (MiniLM, 25 MB int8 ONNX), with heads for
