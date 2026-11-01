@@ -1,6 +1,6 @@
 [project]
 name = "aegisframe"
-version = "0.7.0"
+version = "0.7.1"
 description = "Guardrail for AI image editing: a good story should not unlock a forgery."
 readme = "README.md"
 requires-python = ">=3.11"

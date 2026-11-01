@@ -66,18 +66,23 @@ def ensure_model(manifest: ModelManifest, dest: str | Path) -> Path:
     return dest
 
 
-def _fetch(url: str, dest: Path, retries: int = 3) -> None:
-    """Stream a URL to a file with a real user-agent and a few retries (CDNs reset bare urllib)."""
+def _fetch(url: str, dest: Path, retries: int = 6) -> None:
+    """Stream a URL to a file with a real user-agent and exponential-backoff retries.
+
+    Hugging Face (and CDNs generally) intermittently reset connections and throttle bursts, so a couple
+    of tries is not enough; this backs off 2, 4, 8, 16, 30, 30 s. OSError covers the Windows
+    "connection forcibly closed" reset, which is not a subclass of URLError.
+    """
     last: Exception | None = None
     for attempt in range(retries):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": _UA})
-            with urllib.request.urlopen(req, timeout=60) as resp, dest.open("wb") as out:  # noqa: S310
+            with urllib.request.urlopen(req, timeout=120) as resp, dest.open("wb") as out:  # noqa: S310
                 shutil.copyfileobj(resp, out, length=1 << 20)
             return
-        except (urllib.error.URLError, ConnectionError, TimeoutError) as exc:
+        except (urllib.error.URLError, OSError) as exc:
             last = exc
             dest.unlink(missing_ok=True)
             if attempt < retries - 1:
-                time.sleep(2 * (attempt + 1))
+                time.sleep(min(30, 2 ** (attempt + 1)))
     raise ConnectionError(f"failed to download {url} after {retries} tries: {last}")

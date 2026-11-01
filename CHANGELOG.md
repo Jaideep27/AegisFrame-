@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1
+
+- **More robust model download.** Download-on-first-use now retries with exponential backoff (2-30s, six
+  tries) and a browser user-agent, and catches the Windows connection-reset error. Hugging Face's serving
+  layer intermittently resets or throttles connections; the previous three short tries could fail on a
+  small file. Verified to ride out active throttling.
+
+
 ## 0.7.0
 
 Prompt-level rebuild. The guard now judges a document-edit request from the prompt and the OCR-style

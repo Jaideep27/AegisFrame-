@@ -17,4 +17,4 @@ __all__ = [
     "Action", "AegisConfig", "AegisError", "Blocked", "Decision", "EditSpec", "Guard", "GuardUnavailable",
     "GuardedResult", "OutputRejected", "Policy", "ReviewRequired", "Severity", "VerifiedIdentity", "VerifyResult",
 ]
-__version__ = "0.7.0"
+__version__ = "0.7.1"
