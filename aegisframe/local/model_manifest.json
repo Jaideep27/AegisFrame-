@@ -1,6 +1,6 @@
 {
   "version": "aegis-v07-r2",
-  "base_url": "https://github.com/Jaideep27/AegisFrame-/releases/download/v0.7.0/",
+  "base_url": "https://huggingface.co/Jaideep7/aegisframe-v07/resolve/main/",
   "files": {
     "model.int8.onnx": "eb12ff841afeb8312301197dae69c513d02d55b4ad995d3923909c0507ce2fbd",
     "tokenizer.json": "11acfd476d36d457f3354aef39e503155cbcd3dfbf8a6c335ec4ecaca87ee437",

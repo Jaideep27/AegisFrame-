@@ -9,9 +9,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
+import time
+import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
+
+_UA = "aegisframe/0.7 (+https://pypi.org/project/aegisframe)"  # a bare urllib UA gets reset by some CDNs
 
 
 @dataclass
@@ -50,11 +55,29 @@ def ensure_model(manifest: ModelManifest, dest: str | Path) -> Path:
         if target.exists() and _sha256(target) == expected:
             continue
         url = manifest.base_url + name
+        target.parent.mkdir(parents=True, exist_ok=True)
         tmp = target.with_suffix(target.suffix + ".part")
-        urllib.request.urlretrieve(url, tmp)  # noqa: S310 - url comes from a trusted manifest
+        _fetch(url, tmp)
         got = _sha256(tmp)
         if got != expected:
             tmp.unlink(missing_ok=True)
             raise ValueError(f"{name}: sha256 mismatch (expected {expected[:12]}…, got {got[:12]}…)")
         tmp.replace(target)
     return dest
+
+
+def _fetch(url: str, dest: Path, retries: int = 3) -> None:
+    """Stream a URL to a file with a real user-agent and a few retries (CDNs reset bare urllib)."""
+    last: Exception | None = None
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": _UA})
+            with urllib.request.urlopen(req, timeout=60) as resp, dest.open("wb") as out:  # noqa: S310
+                shutil.copyfileobj(resp, out, length=1 << 20)
+            return
+        except (urllib.error.URLError, ConnectionError, TimeoutError) as exc:
+            last = exc
+            dest.unlink(missing_ok=True)
+            if attempt < retries - 1:
+                time.sleep(2 * (attempt + 1))
+    raise ConnectionError(f"failed to download {url} after {retries} tries: {last}")
